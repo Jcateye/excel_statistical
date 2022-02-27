@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <!-- axios请求处理JS-->
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <meta charset="UTF-8">
+    <title>统计</title>
+</head>
+
+<body>
+    <div>
+        <div><button>计算</button>
+            <!-- <SELECT id="idState" style="width:150" name="state" selectedIndex="$!{state}"
+                multiple="multiple">
+                <OPTION value="">全部</OPTION>
+                <OPTION value="1">通过</OPTION>
+                <OPTION value="2">末通过</OPTION>
+                <OPTION value="3">待处理</OPTION>
+            </SELECT> -->
+            <div>
+                <span>营业员:</span>
+                <input placeholder="啥啥啥啥"><input />
+            </div>
+        </div>
+        <div id="example-1">
+            <table id="example-1" border="1">
+                <template v-for="(module,index) in info.data">
+                    <tr>
+                        <th v-if="index==0" v-for="(step,stepIndex) in module">{{ step }}
+                            <input type="text" id="cardsNum2" v-model="searchVal" value="1" v-on:focus="focus()">
+                            </th>
+                        <td v-else v-for="(step,stepIndex) in module">{{ step }}</td>
+                    </tr>
+                </template>
+            </table>
+            <table-a v-model="info.data"></table-a>
+        </div>
+    </div>
+</body>
+<script>
+
+
+    const app = Vue.createApp({
+        data() {
+            return {
+                info: {
+                    code: 200,
+                    data: [],
+                    success: true,   
+                },
+                fuzzy_list: [],
+            }
+        },
+        mounted() {
+            axios
+                .get('http://localhost:9090/hello')
+                .then(response => {
+                    console.log(response)
+                    return this.info = response.data
+                })
+        },
+        methods: {
+            focus: function () {
+                if (document.querySelector('input') == document.activeElement) {
+                    this.fuzzy_search(this.searchVal.trim());
+                }
+            },
+            fuzzy_search: function (value) {
+                var that = this;
+                if (!value) {
+                    that.fuzzy_list = ['6666','7777','88888'];
+                    return;
+                }
+                //调取接口
+            },
+        },
+        watch: {
+            searchVal: function () {
+                this.focus();
+            },
+        }
+
+    })
+    app.mount('#example-1')
+
+</script>
+<style>
+    table {
+        font-family: verdana, arial, sans-serif;
+        font-size: 11px;
+        color: #333333;
+        border-width: 1px;
+        border-color: #666666;
+        border-collapse: collapse;
+    }
+
+    table th {
+        border-width: 1px;
+        padding: 8px;
+        border-style: solid;
+        border-color: #666666;
+        background-color: #dedede;
+    }
+
+    table td {
+        border-width: 1px;
+        padding: 8px;
+        border-style: solid;
+        border-color: #666666;
+        background-color: #ffffff;
+    }
+
+
+    button {
+        display: inline-block;
+        zoom: 1;
+        /* zoom and *display = ie7 hack for display:inline-block */
+        *display: inline;
+        vertical-align: baseline;
+        margin: 0 2px;
+        outline: none;
+        cursor: pointer;
+        text-align: center;
+        text-decoration: none;
+        font: 14px/100% Arial, Helvetica, sans-serif;
+        padding: .5em 2em .55em;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, .3);
+        -webkit-border-radius: .5em;
+        -moz-border-radius: .5em;
+        border-radius: .5em;
+        -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+        -moz-box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
+    }
+
+    button:hover {
+        text-decoration: none;
+    }
+</style>
+
+</html>
