@@ -50,7 +50,7 @@ func getSheetData() (excel map[string][][]string, excelHeadMap map[string]map[in
 				} else {
 					if headInfo, ok := headMap[index]; ok {
 						if strings.Contains(headInfo.Name, "日期") {
-							if val != "" {
+							if !strings.EqualFold(val, "") {
 								valDate := excelDateToDate(val)
 								val = valDate.Format("2006-01-02")
 							}
