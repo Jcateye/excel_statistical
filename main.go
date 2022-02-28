@@ -2,10 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/plandem/xlsx"
-	"io/ioutil"
 	"log"
 	"os"
 	"strconv"
@@ -21,92 +19,95 @@ func main() {
 	// Engin
 	router := gin.Default()
 	//router := gin.New()
+	excelMap, _ := json.Marshal(excelHeadMap)
+
+	log.Println(string(excelMap))
 	router.Static("/web","./web")
 	router.GET("/hello", func(context *gin.Context) {
 		log.Println(">>>> hello gin start <<<<")
 		context.JSON(200,gin.H{
 			"code":200,
 			"success":true,
-			"data": excel["11月"],
+			"data": excel,
 			"head": excelHeadMap,
 		})
 	})
 	// 指定地址和端口号
 	router.Run("localhost:9090")
 
-	data, err := ioutil.ReadFile("config.txt")
-	if err != nil {
-		fmt.Println("File reading error", err)
-	}
-	var dat map[string]string
-	if err := json.Unmarshal([]byte(data), &dat); err == nil {
-		fmt.Println("==============json str 转map=======================")
-		fmt.Println(dat["开始时间"])
-		fmt.Println(dat["结束时间"])
-	}
-
-	startTime, _ := time.Parse("2006-01-02", dat["开始时间"])
-	endTime, _ := time.Parse("2006-01-02", dat["结束时间"])
-	fmt.Println(startTime, endTime)
-
-	file, err := xlsx.Open("市场部对账单.xlsx")
-	if err != nil {
-		return
-	}
-	sheetsIter := file.Sheets()
-	perList := make([]Performance, 0)
-	for sheetsIter.HasNext() {
-		sheetIndex, _ := sheetsIter.Next()
-		sheet := file.Sheet(sheetIndex)
-		//if sheet.Name() == "11月" {
-		rowIter := sheet.Rows()
-		for rowIter.HasNext() {
-			rowIndex, _ := rowIter.Next()
-			row := sheet.Row(rowIndex)
-			cellIter := row.Cells()
-			performance := Performance{}
-			for cellIter.HasNext() {
-				ci, _, _ := cellIter.Next()
-				cell := row.Cell(ci)
-				val := cell.Value()
-				if val != "" {
-					if rowIndex == 0 {
-						// 初始化列index
-						indexInit(ci, val)
-					} else {
-						rowToPerformance(&performance, ci, cell)
-					}
-					//fmt.Sprintf("row %v column %v value:%v", ri, ci, cell)
-				}
-			}
-			//fmt.Println(performance)
-			perList = append(perList, performance)
-		}
-		//}
-		fmt.Printf("sheet.Name  %s %d \n", sheet.Name(), len(perList))
-	}
-	format := "2006年01月02日"
-	str := fmt.Sprintf("市场部\n%v-%v收到  \r\n", startTime.Format(format), endTime.Format(format))
-	statisMap := sheetStatical(perList, startTime, endTime)
-	receivable := 0.00
-	paid := 00.00
-	perforAccount := 00.00
-	realShot := 0
-	order := 0
-	for _, statis := range statisMap {
-		//fmt.Printf(key)
-		receivable += statis.receivable
-		paid += statis.paid
-		perforAccount += statis.perforAccount
-		realShot += statis.realShot
-		order += statis.order
-		str += fmt.Sprintf("%v 应收金额：%v 已收金额：%v 实收业绩: %v \r\n", statis.person, statis.receivable, statis.paid, statis.perforAccount)
-	}
-	str += fmt.Sprintf("应收金额：%v 已收金额：%v 实收业绩: %v \r\n", receivable, paid, perforAccount)
-	str += fmt.Sprintf("收到订单：%v 实拍：%v  \r\n", realShot, order)
-	str += "------------------------------------------------\r\n"
-	WriteFile("result.txt", []byte(str))
-	file.Close()
+	//data, err := ioutil.ReadFile("config.txt")
+	//if err != nil {
+	//	fmt.Println("File reading error", err)
+	//}
+	//var dat map[string]string
+	//if err := json.Unmarshal([]byte(data), &dat); err == nil {
+	//	fmt.Println("==============json str 转map=======================")
+	//	fmt.Println(dat["开始时间"])
+	//	fmt.Println(dat["结束时间"])
+	//}
+	//
+	//startTime, _ := time.Parse("2006-01-02", dat["开始时间"])
+	//endTime, _ := time.Parse("2006-01-02", dat["结束时间"])
+	//fmt.Println(startTime, endTime)
+	//
+	//file, err := xlsx.Open("市场部对账单.xlsx")
+	//if err != nil {
+	//	return
+	//}
+	//sheetsIter := file.Sheets()
+	//perList := make([]Performance, 0)
+	//for sheetsIter.HasNext() {
+	//	sheetIndex, _ := sheetsIter.Next()
+	//	sheet := file.Sheet(sheetIndex)
+	//	//if sheet.Name() == "11月" {
+	//	rowIter := sheet.Rows()
+	//	for rowIter.HasNext() {
+	//		rowIndex, _ := rowIter.Next()
+	//		row := sheet.Row(rowIndex)
+	//		cellIter := row.Cells()
+	//		performance := Performance{}
+	//		for cellIter.HasNext() {
+	//			ci, _, _ := cellIter.Next()
+	//			cell := row.Cell(ci)
+	//			val := cell.Value()
+	//			if val != "" {
+	//				if rowIndex == 0 {
+	//					// 初始化列index
+	//					indexInit(ci, val)
+	//				} else {
+	//					rowToPerformance(&performance, ci, cell)
+	//				}
+	//				//fmt.Sprintf("row %v column %v value:%v", ri, ci, cell)
+	//			}
+	//		}
+	//		//fmt.Println(performance)
+	//		perList = append(perList, performance)
+	//	}
+	//	//}
+	//	fmt.Printf("sheet.Name  %s %d \n", sheet.Name(), len(perList))
+	//}
+	//format := "2006年01月02日"
+	//str := fmt.Sprintf("市场部\n%v-%v收到  \r\n", startTime.Format(format), endTime.Format(format))
+	//statisMap := sheetStatical(perList, startTime, endTime)
+	//receivable := 0.00
+	//paid := 00.00
+	//perforAccount := 00.00
+	//realShot := 0
+	//order := 0
+	//for _, statis := range statisMap {
+	//	//fmt.Printf(key)
+	//	receivable += statis.receivable
+	//	paid += statis.paid
+	//	perforAccount += statis.perforAccount
+	//	realShot += statis.realShot
+	//	order += statis.order
+	//	str += fmt.Sprintf("%v 应收金额：%v 已收金额：%v 实收业绩: %v \r\n", statis.person, statis.receivable, statis.paid, statis.perforAccount)
+	//}
+	//str += fmt.Sprintf("应收金额：%v 已收金额：%v 实收业绩: %v \r\n", receivable, paid, perforAccount)
+	//str += fmt.Sprintf("收到订单：%v 实拍：%v  \r\n", realShot, order)
+	//str += "------------------------------------------------\r\n"
+	//WriteFile("result.txt", []byte(str))
+	//file.Close()
 
 }
 func WriteFile(name string, data []byte) error {

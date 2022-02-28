@@ -4,7 +4,7 @@ import 	"github.com/deckarep/golang-set"
 
 
 type TableHead struct {
-	index int
-	name string
+	Index    int    `json:"index"`
+	Name     string `json:"name"`
 	ValueSet mapset.Set
 }

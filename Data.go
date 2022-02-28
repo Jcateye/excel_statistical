@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/deckarep/golang-set"
 	"github.com/plandem/xlsx"
 	"strconv"
@@ -39,25 +38,28 @@ func getSheetData() (excel map[string][][]string, excelHeadMap map[string]map[in
 				// 第一次保存下表头/
 				if head {
 					// 每个表头格内容
-					set := mapset.NewSet()
-					headInfo = TableHead{
-						index:    index,
-						name:     val,
-						ValueSet: set}
-					headMap[index] = headInfo
+					if !strings.EqualFold(val, "") {
+						set := mapset.NewSet()
+						headInfo = TableHead{
+							Index:    index,
+							Name:     val,
+							ValueSet: set}
+						headMap[index] = headInfo
+						rowValueArr = append(rowValueArr, val)
+					}
 				} else {
 					if headInfo, ok := headMap[index]; ok {
-						if strings.Contains(headInfo.name, "日期") {
+						if strings.Contains(headInfo.Name, "日期") {
 							if val != "" {
 								valDate := excelDateToDate(val)
 								val = valDate.Format("2006-01-02")
 							}
 						}
 						headInfo.ValueSet.Add(val)
+						rowValueArr = append(rowValueArr, val)
 					}
 				}
 				index++
-				rowValueArr = append(rowValueArr, val)
 				//fmt.Printf("type is ----- %s , %v \n", reflect.TypeOf(val), val)
 			}
 			head = false
@@ -65,14 +67,14 @@ func getSheetData() (excel map[string][][]string, excelHeadMap map[string]map[in
 			// 每一行数据放入表map
 			sheetArr = append(sheetArr, rowValueArr)
 		}
-		fmt.Printf("%s  %+v \n", sheet.Name(), headMap)
+		//fmt.Printf("%s  %+v \n", sheet.Name(), headMap)
 		excelHeadMap[sheet.Name()] = headMap
 
 		//}
 		//fmt.Printf("sheet.Name  %s %d \n", sheet.Name(), len(perList))
 		excel[sheet.Name()] = sheetArr
 	}
-	fmt.Println(excelHeadMap)
+	//fmt.Println(excelHeadMap)
 	return excel, excelHeadMap
 }
 

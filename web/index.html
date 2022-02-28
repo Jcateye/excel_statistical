@@ -19,38 +19,42 @@
                 <OPTION value="2">末通过</OPTION>
                 <OPTION value="3">待处理</OPTION>
             </SELECT> -->
-            <div>
+            <!-- <div>
                 <span>营业员:</span>
                 <input placeholder="啥啥啥啥"><input />
-            </div>
+            </div> -->
         </div>
         <div id="example-1">
-            <table id="example-1" border="1">
-                <template v-for="(module,index) in info.data">
+            <table v-for="(tableData, title) in info.data">
+                <caption>{{title}}</caption>
+                <template v-for="(module,index) in tableData">
                     <tr>
                         <th v-if="index==0" v-for="(step,stepIndex) in module">{{ step }}
-                            <input type="text" id="cardsNum2" v-model="searchVal" value="1" v-on:focus="focus()">
-                            </th>
+                            <input type="text" id="cardsNum2" v-model="searchVal"  v-on:focus="focus()" list="down">
+                            <datalist id="down">    
+                                <option v-for= "(dropValue,index) in fuzzy_list" v-bind:value="dropValue"></option>
+                            </datalist>
+                        </th>
                         <td v-else v-for="(step,stepIndex) in module">{{ step }}</td>
                     </tr>
                 </template>
             </table>
-            <table-a v-model="info.data"></table-a>
         </div>
     </div>
 </body>
 <script>
-
-
     const app = Vue.createApp({
         data() {
             return {
                 info: {
                     code: 200,
                     data: [],
-                    success: true,   
+                    success: true,
+                    head: {}
                 },
                 fuzzy_list: [],
+                searchVal: '',
+
             }
         },
         mounted() {
@@ -61,30 +65,51 @@
                     return this.info = response.data
                 })
         },
+        created() {
+            this.$watch('searchVal', () => {
+                console.log('Article changed!')
+            })
+        },
+        // methods: {
+        //     // 这些方法不会触发侦听器，因为我们只更改了Object/Array的一个property，
+        //     // 不是对象/数组本身
+        //     changeArticleText() {
+        //         this.article.text = 'Vue 3 is awesome'
+        //     },
+        //     addComment() {
+        //         this.comments.push('New comment')
+        //     },
+
+        //     // 这些方法将触发侦听器，因为我们完全替换了对象/数组
+        //     changeWholeArticle() {
+        //         this.article = { text: 'Vue 3 is awesome' }
+        //     },
+        //     clearComments() {
+        //         this.comments = []
+        //     }
+        // },
         methods: {
-            focus: function () {
-                if (document.querySelector('input') == document.activeElement) {
-                    this.fuzzy_search(this.searchVal.trim());
-                }
+            focus: function() {
+                this.fuzzy_search(this.searchVal.trim());
+                if (document.querySelector('input') == document.activeElement) {}
             },
-            fuzzy_search: function (value) {
+            fuzzy_search: function(value) {
                 var that = this;
                 if (!value) {
-                    that.fuzzy_list = ['6666','7777','88888'];
+                    that.fuzzy_list = ['6666', '7777', '88888'];
                     return;
                 }
                 //调取接口
             },
         },
         watch: {
-            searchVal: function () {
+            searchVal: function() {
                 this.focus();
             },
         }
 
     })
     app.mount('#example-1')
-
 </script>
 <style>
     table {
@@ -95,7 +120,7 @@
         border-color: #666666;
         border-collapse: collapse;
     }
-
+    
     table th {
         border-width: 1px;
         padding: 8px;
@@ -103,7 +128,7 @@
         border-color: #666666;
         background-color: #dedede;
     }
-
+    
     table td {
         border-width: 1px;
         padding: 8px;
@@ -111,8 +136,7 @@
         border-color: #666666;
         background-color: #ffffff;
     }
-
-
+    
     button {
         display: inline-block;
         zoom: 1;
@@ -134,7 +158,7 @@
         -moz-box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
         box-shadow: 0 1px 2px rgba(0, 0, 0, .2);
     }
-
+    
     button:hover {
         text-decoration: none;
     }
