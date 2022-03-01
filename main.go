@@ -2,8 +2,9 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/plandem/xlsx"
+	_ "github.com/plandem/xlsx"
 	"log"
 	"os"
 	"strconv"
@@ -12,9 +13,58 @@ import (
 
 var personIndex, dateIndex, brandIndex, classIndex, productIndex, realShotIndex, linkIndex, orderIndex, receivableIndex, paidIndex, perforAccountIndex, paymentTypeIndex, payDateIndex, commentIndex = -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
 
-func main() {
+func getStatisticalData(c *gin.Context)  {
+	startDateStr := c.Query("startDate")
+	endDateStr := c.Query("endDate")
 
-	excel , excelHeadMap:= getSheetData()
+	startTime, err := time.Parse("2006-01-02", startDateStr)
+	if err != nil {
+		startTime, err = time.Parse("2006/01/02", startDateStr)
+		if err != nil {
+			return
+		}
+	}
+	endDate, err := time.Parse("2006-01-02", endDateStr)
+	if err != nil {
+		endDate, err = time.Parse("2006/01/02", startDateStr)
+		if err != nil {
+			endDate = time.Now()
+		}
+	}
+
+	perList := make([]Performance, 0)
+	for key,val := range excelHeadMap {
+		// 遍历各表,初始化索引信息
+		for index,head := range val {
+			indexInit(index, head.Name)
+		}
+		sheetArr := excel[key]
+
+		for _, rowData :=range sheetArr{
+			performance := Performance{}
+			for i := 0; i < len(rowData); i++ {
+				rowToPerformance(&performance, i, rowData[i])
+			}
+			perList = append(perList, performance)
+		}
+		// 每张表处理完初始化索引
+		personIndex, dateIndex, brandIndex, classIndex, productIndex, realShotIndex, linkIndex, orderIndex, receivableIndex, paidIndex, perforAccountIndex, paymentTypeIndex, payDateIndex, commentIndex = -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1
+	}
+
+	statisMap := sheetStatical(perList, startTime, endDate)
+	str := getOutStr(statisMap, startTime, endDate)
+
+	c.JSON(200,gin.H{
+		"code":200,
+		"success":true,
+		"data": str,
+	})
+}
+
+var excel map[string][][]string
+var excelHeadMap map[string]map[int]TableHead
+func main() {
+	excel , excelHeadMap= getSheetData()
 
 	// Engin
 	router := gin.Default()
@@ -32,6 +82,7 @@ func main() {
 			"head": excelHeadMap,
 		})
 	})
+	router.GET("/cal", getStatisticalData)
 	// 指定地址和端口号
 	router.Run("localhost:9090")
 
@@ -49,7 +100,7 @@ func main() {
 	//startTime, _ := time.Parse("2006-01-02", dat["开始时间"])
 	//endTime, _ := time.Parse("2006-01-02", dat["结束时间"])
 	//fmt.Println(startTime, endTime)
-	//
+
 	//file, err := xlsx.Open("市场部对账单.xlsx")
 	//if err != nil {
 	//	return
@@ -75,7 +126,7 @@ func main() {
 	//					// 初始化列index
 	//					indexInit(ci, val)
 	//				} else {
-	//					rowToPerformance(&performance, ci, cell)
+	//					rowToPerformance(&performance, ci, val)
 	//				}
 	//				//fmt.Sprintf("row %v column %v value:%v", ri, ci, cell)
 	//			}
@@ -86,29 +137,35 @@ func main() {
 	//	//}
 	//	fmt.Printf("sheet.Name  %s %d \n", sheet.Name(), len(perList))
 	//}
-	//format := "2006年01月02日"
-	//str := fmt.Sprintf("市场部\n%v-%v收到  \r\n", startTime.Format(format), endTime.Format(format))
+
 	//statisMap := sheetStatical(perList, startTime, endTime)
-	//receivable := 0.00
-	//paid := 00.00
-	//perforAccount := 00.00
-	//realShot := 0
-	//order := 0
-	//for _, statis := range statisMap {
-	//	//fmt.Printf(key)
-	//	receivable += statis.receivable
-	//	paid += statis.paid
-	//	perforAccount += statis.perforAccount
-	//	realShot += statis.realShot
-	//	order += statis.order
-	//	str += fmt.Sprintf("%v 应收金额：%v 已收金额：%v 实收业绩: %v \r\n", statis.person, statis.receivable, statis.paid, statis.perforAccount)
-	//}
-	//str += fmt.Sprintf("应收金额：%v 已收金额：%v 实收业绩: %v \r\n", receivable, paid, perforAccount)
-	//str += fmt.Sprintf("收到订单：%v 实拍：%v  \r\n", realShot, order)
-	//str += "------------------------------------------------\r\n"
+	//str := getOutStr(statisMap)
 	//WriteFile("result.txt", []byte(str))
 	//file.Close()
 
+}
+
+func getOutStr(statisMap map[string]*Statistical,startTime time.Time, endDate time.Time) string {
+	format := "2006年01月02日"
+	str := fmt.Sprintf("市场部\n%v-%v收到  \r\n", startTime.Format(format), endDate.Format(format))
+	receivable := 0.00
+	paid := 00.00
+	perforAccount := 00.00
+	realShot := 0
+	order := 0
+	for _, statis := range statisMap {
+		//fmt.Printf(key)
+		receivable += statis.receivable
+		paid += statis.paid
+		perforAccount += statis.perforAccount
+		realShot += statis.realShot
+		order += statis.order
+		str += fmt.Sprintf("%v 应收金额：%v 已收金额：%v 实收业绩: %v \r\n", statis.person, statis.receivable, statis.paid, statis.perforAccount)
+	}
+	str += fmt.Sprintf("应收金额：%v 已收金额：%v 实收业绩: %v \r\n", receivable, paid, perforAccount)
+	str += fmt.Sprintf("收到订单：%v 实拍：%v  \r\n", realShot, order)
+	str += "------------------------------------------------\r\n"
+	return str
 }
 func WriteFile(name string, data []byte) error {
 	f, err := os.OpenFile(name, os.O_APPEND|os.O_CREATE, 0777)
@@ -150,33 +207,33 @@ func sheetStatical(performanceList []Performance, startTime time.Time, endTime t
 	return statisMap
 }
 
-func rowToPerformance(performance *Performance, colIndex int, value *xlsx.Cell) {
+func rowToPerformance(performance *Performance, colIndex int, value string) {
 	if colIndex == personIndex {
-		performance.person = value.Value()
+		performance.person = value
 	} else if colIndex == dateIndex {
-		performance.date, _ = value.Date()
+		performance.date, _ =  time.Parse("2006-01-02", value)
 	} else if colIndex == brandIndex {
-		performance.brand = value.Value()
+		performance.brand = value
 	} else if colIndex == productIndex {
-		performance.product = value.Value()
+		performance.product = value
 	} else if colIndex == realShotIndex {
-		performance.realShot, _ = strconv.Atoi(value.Value())
+		performance.realShot, _ = strconv.Atoi(value)
 	} else if colIndex == linkIndex {
-		performance.link, _ = strconv.Atoi(value.Value())
+		performance.link, _ = strconv.Atoi(value)
 	} else if colIndex == orderIndex {
-		performance.order, _ = strconv.Atoi(value.Value())
+		performance.order, _ = strconv.Atoi(value)
 	} else if colIndex == receivableIndex {
-		performance.receivable, _ = strconv.ParseFloat(value.Value(), 64)
+		performance.receivable, _ = strconv.ParseFloat(value, 64)
 	} else if colIndex == paidIndex {
-		performance.paid, _ = strconv.ParseFloat(value.Value(), 64)
+		performance.paid, _ = strconv.ParseFloat(value, 64)
 	} else if colIndex == perforAccountIndex {
-		performance.perforAccount, _ = strconv.ParseFloat(value.Value(), 64)
+		performance.perforAccount, _ = strconv.ParseFloat(value, 64)
 	} else if colIndex == paymentTypeIndex {
-		performance.paymentType = value.Value()
+		performance.paymentType = value
 	} else if colIndex == commentIndex {
-		performance.comment = value.Value()
+		performance.comment = value
 	} else if colIndex == payDateIndex {
-		performance.payDate, _ = value.Date()
+		performance.payDate, _ = time.Parse("2006-01-02", value)
 		//fmt.Println("payDate date is ", performance.payDate)
 	}
 }
